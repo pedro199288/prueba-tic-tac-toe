@@ -248,10 +248,10 @@ function Game() {
     return (
         <div className="w-full h-full flex-centered flex-col">
             <h1 className="text-2xl font-semibold mb-6">Tick Tack Toe</h1>
-            <Button onClick={prepareNewGame} color={'purple'}>
+            <Button onClick={prepareNewGame} className="bg-purple-400 mb-4">
                 new game
             </Button>
-            <div className="h-20 mt-8 mb-3 flex-center">
+            <div className="h-20 my-3 flex-center">
                 {infoMessage && (
                     <div className="text-lg text-blue-800 bg-blue-100 rounded-sm py-2 px-8 border border-blue-800">
                         {infoMessage}
@@ -259,18 +259,14 @@ function Game() {
                 )}
             </div>
             <Board handleSquareClick={handleSquareClick} boardState={boardState} disabled={!matchId} />
-            <button
-                className="btn text-white bg-purple-400 mt-4"
-                disabled={!lastMove || !matchId}
-                onClick={undoLastMove}
-            >
+            <Button disabled={!lastMove || !matchId} onClick={undoLastMove} className="mt-4 bg-purple-400">
                 undo last move
-            </button>
+            </Button>
             <Modal title="You choose!" isOpen={chooseMarkModalOpen} onClose={handleCloseModal}>
-                <Button onClick={chooseCrosses} color={'green'}>
+                <Button onClick={chooseCrosses} className="bg-green-500">
                     x
                 </Button>
-                <Button onClick={chooseCircles} color={'green'}>
+                <Button onClick={chooseCircles} className="bg-green-500">
                     o
                 </Button>
             </Modal>

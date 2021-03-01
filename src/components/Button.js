@@ -1,8 +1,8 @@
 import React, { memo } from 'react'
 
-const Button = ({ color, onClick, children }) => {
+const Button = ({ onClick, children, disabled, className }) => {
     return (
-        <button className={`btn text-white bg-${color}-500`} onClick={onClick}>
+        <button disabled={disabled} className={`btn text-white ${className}`} onClick={onClick}>
             {children}
         </button>
     )
@@ -10,5 +10,9 @@ const Button = ({ color, onClick, children }) => {
 
 export default memo(
     Button,
-    (prev, next) => next.color === prev.color && next.onClick === prev.onClick && next.children === prev.children
+    (prev, next) =>
+        next.onClick === prev.onClick &&
+        next.children === prev.children &&
+        next.disabled === prev.disabled &&
+        next.className === prev.className
 )
