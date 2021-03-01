@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { getRandomBoolean, getRandomIntInRange, getIndicesWithValue } from '../helpers'
 import Board from './Board'
+import Button from './Button'
 import Modal from './Modal'
 
 const dash = '-'
@@ -30,7 +31,7 @@ const centerSquarePosition = 4
 const initialBoardState = Array(9).fill(dash)
 
 function Game() {
-    const [matchId, setMatchId] = useState(null) // TODO: reset this on new game click
+    const [matchId, setMatchId] = useState(null)
     const [boardState, setBoardState] = useState(initialBoardState)
     const [lastMove, setLastMove] = useState(null)
     const [isBotTurn, setIsBotTurn] = useState(null)
@@ -40,6 +41,8 @@ function Game() {
 
     const botTimeout = useRef(null)
 
+    const handleCloseModal = useCallback(() => setChooseMarkModalOpen(false), [])
+
     const endGame = () => {
         if (botTimeout.current) {
             clearTimeout(botTimeout.current)
@@ -48,7 +51,7 @@ function Game() {
         setMatchId(null)
     }
 
-    const prepareNewGame = () => {
+    const prepareNewGame = useCallback(() => {
         endGame()
         // get if bot will begin
         const botWillBegin = getRandomBoolean()
@@ -60,7 +63,7 @@ function Game() {
         } else {
             setChooseMarkModalOpen(true)
         }
-    }
+    }, [])
 
     const startNewGame = () => {
         setWinner(null)
@@ -82,9 +85,7 @@ function Game() {
     }
 
     const makeMove = (position) => {
-        if (boardState[position] === dash) {
-            fillSquare(position, isCirclesTurn ? circle : cross)
-        }
+        fillSquare(position, isCirclesTurn ? circle : cross)
     }
 
     const undoLastMove = () => {
@@ -101,17 +102,17 @@ function Game() {
         alert('wait for the bot! he also wants to play')
     }
 
-    const chooseCircles = () => {
+    const chooseCircles = useCallback(() => {
         setIsCirclesTurn(true)
         setChooseMarkModalOpen(false)
         startNewGame()
-    }
+    }, [])
 
-    const chooseCrosses = () => {
+    const chooseCrosses = useCallback(() => {
         setIsCirclesTurn(false)
         setChooseMarkModalOpen(false)
         startNewGame()
-    }
+    }, [])
 
     // gets an empty corner position, if no corners available, it will return null
     const getRandomEmptyCornerIndex = () => {
@@ -145,13 +146,9 @@ function Game() {
         // determines if bot bgun the match
         const botBegunTheMatch = isBotTurn && botPositions.length === humanPositions.length
 
-        let positionToSelect = null
-
-        // if emptySquares available, look for the best choice
-
         // Check if board is empty, that means that bot begins so it will chose any corner
         if (boardState.every((squareValue) => squareValue === dash)) {
-            positionToSelect = getRandomEmptyCornerIndex()
+            return getRandomEmptyCornerIndex()
         }
 
         // find the first closest victory case (i.e., it just need one move)
@@ -165,29 +162,27 @@ function Game() {
                 victoryCasePositions.filter((position) => humanPositions.includes(position)).length === 2 &&
                 !victoryCasePositions.some((position) => botPositions.includes(position))
         )
-        console.log('humanClosestVictoryCase', humanClosestVictoryCase)
-        console.log('botClosestVictoryCase', botClosestVictoryCase)
+
         // If board is not empty, look if bot is close to win and win
         if (botClosestVictoryCase) {
-            positionToSelect = botClosestVictoryCase.find((position) => !botPositions.includes(position))
-            console.log('botClosestVictoryCase positionToSelect', positionToSelect)
+            return botClosestVictoryCase.find((position) => !botPositions.includes(position))
         }
         // if bot is not close to win,  look if human is close to win and avoid it
-        if (humanClosestVictoryCase && positionToSelect === null) {
-            positionToSelect = humanClosestVictoryCase.find((position) => !humanPositions.includes(position))
-            console.log('humanClosestVictoryCase positionToSelect', positionToSelect)
+        if (humanClosestVictoryCase) {
+            return humanClosestVictoryCase.find((position) => !humanPositions.includes(position))
         }
 
         // none of the players can win in one move, check best options
-        if (botBegunTheMatch && positionToSelect === null) {
+        if (botBegunTheMatch) {
             // if botBegunTheMatch, always look for corners if there is no direct win/lose possibilty
-            positionToSelect =
+            return (
                 getRandomEmptyCornerIndex() ??
                 emptySquaresPositions[getRandomIntInRange(0, emptySquaresPositions.length - 1)]
-        } else if (emptySquaresPositions.includes(centerSquarePosition) && positionToSelect === null) {
+            )
+        } else if (emptySquaresPositions.includes(centerSquarePosition)) {
             // if !botBegunTheMatch and center is available, take the center
-            positionToSelect = centerSquarePosition
-        } else if (positionToSelect === null) {
+            return centerSquarePosition
+        } else {
             // if human chose diagonal positions, don't chose corner, chose side instead
             if (
                 diagonalPositionsCases.some((diagonalCasePositions) =>
@@ -195,16 +190,14 @@ function Game() {
                 )
             ) {
                 // don't chose corner, chose a side
-                positionToSelect = getRandomEmptySideIndex()
+                return getRandomEmptySideIndex()
             } else {
-                positionToSelect =
+                return (
                     getRandomEmptyCornerIndex() ??
                     emptySquaresPositions[getRandomIntInRange(0, emptySquaresPositions.length - 1)]
+                )
             }
         }
-
-        if (positionToSelect === null) alert('bot could not find') // throw new Error('Bot could not find a choice')
-        return positionToSelect
     }
 
     useEffect(() => {
@@ -213,7 +206,7 @@ function Game() {
                 botTimeout.current = setTimeout(() => {
                     const botBestChoice = getBestChoice()
                     makeMove(botBestChoice)
-                }, 0 /* getRandomIntInRange(1000, 3000) TODO: uncomment */)
+                }, getRandomIntInRange(1000, 3000))
             }
             if (!isBotTurn && botTimeout.current) {
                 clearTimeout(botTimeout.current)
@@ -255,10 +248,10 @@ function Game() {
     return (
         <div className="w-full h-full flex-centered flex-col">
             <h1 className="text-2xl font-semibold mb-6">Tick Tack Toe</h1>
-            <button onClick={prepareNewGame} className="btn text-white bg-purple-400 mb-4">
+            <Button onClick={prepareNewGame} color={'purple'}>
                 new game
-            </button>
-            <div className="h-20 my-3 flex-center">
+            </Button>
+            <div className="h-20 mt-8 mb-3 flex-center">
                 {infoMessage && (
                     <div className="text-lg text-blue-800 bg-blue-100 rounded-sm py-2 px-8 border border-blue-800">
                         {infoMessage}
@@ -273,13 +266,13 @@ function Game() {
             >
                 undo last move
             </button>
-            <Modal title="You choose!" isOpen={chooseMarkModalOpen} onClose={() => setChooseMarkModalOpen(false)}>
-                <button className="btn text-white bg-green-500" onClick={chooseCrosses}>
+            <Modal title="You choose!" isOpen={chooseMarkModalOpen} onClose={handleCloseModal}>
+                <Button onClick={chooseCrosses} color={'green'}>
                     x
-                </button>
-                <button className="btn text-white bg-green-500" onClick={chooseCircles}>
+                </Button>
+                <Button onClick={chooseCircles} color={'green'}>
                     o
-                </button>
+                </Button>
             </Modal>
         </div>
     )

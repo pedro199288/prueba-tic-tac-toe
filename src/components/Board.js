@@ -3,7 +3,13 @@ import BoardSquare from './BoardSquare'
 
 const Board = ({ boardState, handleSquareClick, disabled }) => {
     const boardSquares = boardState.map((squareValue, i) => {
-        return <BoardSquare onClick={() => handleSquareClick(i)} key={i} value={squareValue} />
+        return (
+            <BoardSquare
+                onClick={squareValue === '-' ? () => handleSquareClick(i) : null}
+                key={i}
+                value={squareValue}
+            />
+        )
     })
 
     return (
